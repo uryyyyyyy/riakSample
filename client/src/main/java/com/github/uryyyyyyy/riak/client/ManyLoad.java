@@ -17,7 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class Main {
+public class ManyLoad {
 
 	public static void main(String[] args) throws UnknownHostException, ExecutionException, InterruptedException {
 
@@ -42,7 +42,7 @@ public class Main {
 
 	private static void dataOut(RiakClient client) throws ExecutionException, InterruptedException {
 		Namespace ns = new Namespace("default","my_bucket");
-		Location location = new Location(ns, "my_key");
+		Location location = new Location(ns, "my_key" + 333);
 		FetchValue fv = new FetchValue.Builder(location).build();
 		FetchValue.Response response = client.execute(fv);
 		RiakObject obj = response.getValue(RiakObject.class);
@@ -51,12 +51,16 @@ public class Main {
 
 	private static void dataIn(RiakClient client) throws ExecutionException, InterruptedException {
 		Namespace ns = new Namespace("default", "my_bucket");
-		Location location = new Location(ns, "my_key");
-		RiakObject riakObject = new RiakObject();
-		riakObject.setValue(BinaryValue.create("my_value"));
-		StoreValue store = new StoreValue.Builder(riakObject)
-				.withLocation(location)
-				.withOption(StoreValue.Option.W, new Quorum(3)).build();
-		client.execute(store);
+		long start2 = System.currentTimeMillis();
+		for(int i = 0; i < 10000; i++){
+			Location location = new Location(ns, "my_key" + i);
+			RiakObject riakObject = new RiakObject();
+			riakObject.setValue(BinaryValue.create("my_value" + i));
+			StoreValue store = new StoreValue.Builder(riakObject)
+					.withLocation(location)
+					.withOption(StoreValue.Option.W, new Quorum(3)).build();
+			client.execute(store);
+		}
+		System.out.println(System.currentTimeMillis() - start2 + " ms");
 	}
 }
